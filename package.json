@@ -1,0 +1,26 @@
+{
+  "name": "staking-zerp",
+  "version": "0.0.1",
+  "description": "The Staking zerp contracts",
+  "main": "index.js",
+  "scripts": {},
+  "repository": "git@gitlab.cryptozaurus.com:3022/platinum/staking-zero.git",
+  "author": "Space team",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^2.1.4",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@openzeppelin/contracts": "^4.2.0",
+    "@openzeppelin/hardhat-upgrades": "^1.9.0",
+    "@openzeppelin/test-helpers": "^0.5.13",
+    "chai": "^4.3.4",
+    "dotenv": "^10.0.0",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.4.4",
+    "hardhat": "^2.6.0",
+    "web3": "^1.5.2",
+    "bignumber.js": "^9.0.1"
+  }
+}
