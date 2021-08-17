@@ -1,7 +1,7 @@
 {
-  "name": "staking-zerp",
+  "name": "staking-zero",
   "version": "0.0.1",
-  "description": "The Staking zerp contracts",
+  "description": "The Staking zero contracts",
   "main": "index.js",
   "scripts": {},
   "repository": "git@gitlab.cryptozaurus.com:3022/platinum/staking-zero.git",
