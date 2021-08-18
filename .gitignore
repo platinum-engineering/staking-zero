@@ -9,3 +9,5 @@ build
 cache
 artifacts
 
+yarn.lock
+
