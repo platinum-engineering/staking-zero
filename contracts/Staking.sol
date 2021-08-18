@@ -3,7 +3,7 @@ pragma solidity ^0.8.6;
 
 import "./StakingStorage.sol";
 
-contract SpaceOracle is StakingStorageV1 {
+contract Staking is StakingStorageV1 {
 
     function initialize(
         address token_
