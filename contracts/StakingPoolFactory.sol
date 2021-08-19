@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import "./Staking.sol";
+import "./StakingPool.sol";
 
 contract StakingPoolFactory {
     /**
@@ -18,7 +18,7 @@ contract StakingPoolFactory {
      * @param stakeToken_ The address of the staking asset
      */
     function createStakingPool(address owner_, address stakeToken_) external returns (bool) {
-        Staking newPool = new Staking(stakeToken_);
+        StakingPool newPool = new Staking(stakeToken_);
 
         newPool.transferOwnership(owner_);
 
