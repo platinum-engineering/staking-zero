@@ -2,7 +2,7 @@
 pragma solidity ^0.8.6;
 
 import "./StakingPool.sol";
-import "./utils/ERC20.sol";
+import "./utils/ERC20Token.sol";
 
 contract StakingPoolFactory {
     /**
