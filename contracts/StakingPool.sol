@@ -2,18 +2,22 @@
 pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./utils/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract StakingPool is Ownable {
+contract StakingPool is Ownable, ERC20 {
     address public stakeToken;
 
     event Stake(address indexed from, uint amount);
     event Unstake(address indexed to, uint amount);
 
-    constructor(address stakeToken_) {
+    constructor(
+        address stakeToken_,
+        string memory name_,
+        string memory symbol_
+    ) ERC20(name_, symbol_) {
         require(
             stakeToken_ != address(0)
-            , "Staking::constructor: address is 0"
+            , "StakingPool::constructor: address is 0"
         );
 
         stakeToken = stakeToken_;

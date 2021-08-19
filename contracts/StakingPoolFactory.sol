@@ -2,6 +2,7 @@
 pragma solidity ^0.8.6;
 
 import "./StakingPool.sol";
+import "./utils/ERC20.sol";
 
 contract StakingPoolFactory {
     /**
@@ -18,12 +19,20 @@ contract StakingPoolFactory {
      * @param stakeToken_ The address of the staking asset
      */
     function createStakingPool(address owner_, address stakeToken_) external returns (bool) {
-        StakingPool newPool = new StakingPool(stakeToken_);
+        (string memory name, string memory symbol) = _createNameAndSymbol(stakeToken_);
+
+        StakingPool newPool = new StakingPool(stakeToken_, name, symbol);
 
         newPool.transferOwnership(owner_);
 
         emit StakingPoolCreated(address(newPool));
 
         return true;
+    }
+
+    function _createNameAndSymbol(address stakeToken_) internal view returns (string memory, string memory) {
+        string memory name = string(abi.encodePacked("Staking LP ", ERC20(stakeToken_).name()));
+        string memory symbol = string(abi.encodePacked("StLP ", ERC20(stakeToken_).symbol()));
+        return (name, symbol);
     }
 }
