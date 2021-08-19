@@ -18,7 +18,7 @@ contract StakingPoolFactory {
      * @param stakeToken_ The address of the staking asset
      */
     function createStakingPool(address owner_, address stakeToken_) external returns (bool) {
-        StakingPool newPool = new Staking(stakeToken_);
+        StakingPool newPool = new StakingPool(stakeToken_);
 
         newPool.transferOwnership(owner_);
 
