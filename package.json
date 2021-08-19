@@ -3,7 +3,11 @@
   "version": "0.0.1",
   "description": "The Staking zero contracts",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile",
+    "deploy": "npx hardhat run scripts/deploy.js"
+  },
   "repository": "git@gitlab.cryptozaurus.com:3022/platinum/staking-zero.git",
   "author": "Space team",
   "license": "MIT",
