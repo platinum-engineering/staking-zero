@@ -24,24 +24,37 @@ contract StakingPool is Ownable, ERC20 {
     }
 
     // transfer stake tokens from user to pool
-    // mint and transfer lp tokens from pool to user
+    // mint lp tokens from pool to user
     function stake(uint tokenAmount) external {
         uint amount = doTransferIn(msg.sender, stakeToken, tokenAmount);
 
-        // @todo transfer lp tokens from pool to user
+        uint lpAmount = calcLPAmount(amount);
+        _mint(msg.sender, lpAmount);
 
         emit Stake(msg.sender, amount);
     }
 
-    // transfer and burn lp tokens from user to pool
+    function calcLPAmount(uint amountIn) public view returns (uint) {
+        uint lpAmountOut = amountIn;
+
+        return lpAmountOut;
+    }
+
+    // burn lp tokens from user
     // transfer stake tokens from pool to user
-    function unstake(uint lpAmount) external {
-        doTransferIn(msg.sender, address(this), lpAmount);
+    function unstake(uint lpAmountIn) external {
+        _burn(msg.sender, lpAmountIn);
 
-        // @todo transfer stake tokens from pool to user
-        uint amount = 0;
+        uint amountOut = calcAmountOut(lpAmountIn);
+        doTransferOut(stakeToken, msg.sender, amountOut);
 
-        emit Unstake(msg.sender, amount);
+        emit Unstake(msg.sender, amountOut);
+    }
+
+    function calcAmountOut(uint lpAmountIn) public view returns (uint) {
+        uint amountOut = lpAmountIn;
+
+        return amountOut;
     }
 
     function doTransferIn(address from, address token, uint amount) internal returns (uint) {
