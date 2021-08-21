@@ -10,4 +10,7 @@ cache
 artifacts
 
 yarn.lock
+package-lock.json
 
+coverage
+coverage.json
