@@ -1,6 +1,8 @@
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-ethers");
+require("@nomiclabs/hardhat-solhint");
+require("solidity-coverage");
 require("dotenv/config");
 
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
@@ -11,10 +13,22 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
     }
 });
 
+// npx hardhat verify --network mainnet
+async function getKey(network) {
+    if (network === 'mainnet')    { console.log('apiKey is ' + process.env.ETHERSCAN_API_KEY); return process.env.ETHERSCAN_API_KEY; }
+    else if (network === 'rinkeby') { console.log('apiKey is ' + process.env.BSCSCAN_API_KEY); return process.env.BSCSCAN_API_KEY; }
+    else if (network === 'bscmainnet') { console.log('apiKey is ' + process.env.BSCSCAN_API_KEY); return process.env.BSCSCAN_API_KEY; }
+    else if (network === 'bsctestnet') { console.log('apiKey is ' + process.env.BSCSCAN_API_KEY); return process.env.BSCSCAN_API_KEY; }
+    else if (network === 'polygon') { console.log('apiKey is ' + process.env.POLYGON_API_KEY); return process.env.POLYGON_API_KEY; }
+    else if (network === 'mumbai') { console.log('apiKey is ' + process.env.POLYGON_API_KEY); return process.env.POLYGON_API_KEY; }
+    else { console.log('network is hardhat or ' + network)}
+}
+
 module.exports = {
     defaultNetwork: "hardhat",
     networks: {
         hardhat: {
+            initialBaseFeePerGas: 0
         },
         mainnet: {
             url: process.env.ETHEREUM_MAINNET_URL,
@@ -72,5 +86,8 @@ module.exports = {
         tests: "./test",
         cache: "./cache",
         artifacts: "./artifacts"
+    },
+    etherscan: {
+        apiKey: getKey(process.argv[4])
     },
 };
