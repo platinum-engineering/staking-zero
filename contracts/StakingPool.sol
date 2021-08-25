@@ -13,6 +13,12 @@ contract StakingPool is Storage, Ownable {
         string memory name_,
         string memory symbol_
     ) {
+        require(
+            implAndTerms_ != address(0)
+            && stakeToken_ != address(0),
+            "StakingPool::constructor: address is 0"
+        );
+
         implementation = implAndTerms_;
 
         delegateTo(implementation, abi.encodeWithSignature("initialize(address,string,string)", stakeToken_, name_, symbol_));
