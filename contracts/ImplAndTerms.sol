@@ -4,54 +4,155 @@ pragma solidity ^0.8.6;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ERC20Init.sol";
 import "./Storage.sol";
+import "./Whitelist.sol";
 
 contract ImplAndTerms is Storage, Ownable, ERC20Init {
+    address public whitelist;
     address public stakeToken;
 
-    event Stake(address indexed from, uint amount);
-    event Unstake(address indexed to, uint amount);
+    uint public refererBonusPercent;
+    uint public influencerBonusPercent;
+    uint public developerBonusPercent;
+
+    uint public stakeCounter;
+
+    struct StakeData {
+        address staker;
+        uint lpAmount;
+    }
+
+    mapping(uint => StakeData) public stakes;
+
+    event Stake(uint stakeId, address indexed from, uint lpAmountOut);
+    event Unstake(uint stakeId, address indexed to, uint stakeTokenAmountOut);
 
     function initialize(
+        address whitelist_,
         address stakeToken_,
         string memory name_,
         string memory symbol_
     ) public {
         require(
-            stakeToken_ != address(0)
-            , "ImplAndTerms::initialize: address is 0"
+            whitelist_ != address(0)
+            && stakeToken_ != address(0),
+            "ImplAndTerms::initialize: address is 0"
         );
 
+        whitelist = whitelist_;
         stakeToken = stakeToken_;
+
+        refererBonusPercent = 0.5e18; // 0.5%
+        influencerBonusPercent = 0.75e18; // 0.75%
+        developerBonusPercent = 0.2e18; // 0.2%
 
         super.initialize(name_, symbol_);
     }
 
     // transfer stake tokens from user to pool
     // mint lp tokens from pool to user
-    function stake(uint tokenAmount) external {
-        uint amount = doTransferIn(msg.sender, stakeToken, tokenAmount);
-
-        uint lpAmount = calcLPAmount(amount);
-        _mint(msg.sender, lpAmount);
-
-        emit Stake(msg.sender, amount);
+    function stake(uint tokenAmount) public {
+        stakeInternal(msg.sender, tokenAmount, address(0), address(0), false);
     }
 
-    function calcLPAmount(uint amountIn) public view returns (uint) {
-        uint lpAmountOut = amountIn;
+    function stake(uint tokenAmount, address referer) public {
+        stakeInternal(msg.sender, tokenAmount, referer, address(0), false);
+    }
 
-        return lpAmountOut;
+    function stake(uint tokenAmount, address referer, address influencer) public {
+        stakeInternal(msg.sender, tokenAmount, referer, influencer, false);
+    }
+
+    function stake(uint tokenAmount, address referer, address influencer, bool donatForDeveloper) public {
+        stakeInternal(msg.sender, tokenAmount, referer, influencer, donatForDeveloper);
+    }
+
+    function stakeInternal(address staker, uint tokenAmount, address referer, address influencer, bool donatsForDevelopers) internal {
+        uint amountIn = doTransferIn(staker, stakeToken, tokenAmount);
+
+        uint stakerLpAmount = calcStakerLPAmount(amountIn);
+
+        stakeFresh(staker, stakerLpAmount);
+
+        if (referer != address(0)) {
+            stakeFresh(referer, calcRefererLPAmount(amountIn));
+        }
+
+        if (influencer != address(0)) {
+            bool isInfluencer = WhiteList(whitelist).getWhiteListStatus(influencer);
+
+            require(isInfluencer, "ImplAndTerms::stakeInternal: influencer is not in whitelist");
+
+            stakeFresh(influencer, calcInfluencerLpAmount(amountIn));
+        }
+
+        if (donatsForDevelopers) {
+            stakeFresh(getDeveloperAddress(), calcDeveloperLPAmount(amountIn));
+        }
+    }
+
+    function stakeFresh(address staker, uint lpAmountOut) internal {
+        _mint(staker, lpAmountOut);
+
+        stakeCounter++;
+        stakes[stakeCounter] = StakeData({staker: staker, lpAmount: lpAmountOut});
+
+        emit Stake(stakeCounter, staker, lpAmountOut);
+    }
+
+    function calcAllLPAmountOut(uint amountIn) public view returns (uint, uint, uint, uint) {
+        uint stakerLpAmountOut = calcStakerLPAmount(amountIn);
+        uint refererLpAmountOut = calcRefererLPAmount(amountIn);
+        uint influencerLpAmountOut = calcInfluencerLpAmount(amountIn);
+        uint developerLpAmountOut = calcDeveloperLPAmount(amountIn);
+
+        return (stakerLpAmountOut, refererLpAmountOut, influencerLpAmountOut, developerLpAmountOut);
+    }
+
+    function calcStakerLPAmount(uint amountIn) public view returns (uint) {
+        return amountIn;
+    }
+
+    function calcRefererLPAmount(uint amountIn) public view returns (uint) {
+        return amountIn * refererBonusPercent / 100e18;
+    }
+
+    function calcInfluencerLpAmount(uint amountIn) public view returns (uint) {
+        return amountIn * influencerBonusPercent / 100e18;
+    }
+
+    function calcDeveloperLPAmount(uint amountIn) public view returns (uint) {
+        return amountIn * developerBonusPercent / 100e18;
     }
 
     // burn lp tokens from user
     // transfer stake tokens from pool to user
-    function unstake(uint lpAmountIn) external {
-        _burn(msg.sender, lpAmountIn);
+    function unstake(uint stakeId) external {
+        uint[] memory stakeIds = new uint[](1);
+        stakeIds[0] = stakeId;
 
-        uint amountOut = calcAmountOut(lpAmountIn);
-        doTransferOut(stakeToken, msg.sender, amountOut);
+        unstake(stakeIds);
+    }
 
-        emit Unstake(msg.sender, amountOut);
+    function unstake(uint[] memory stakeIds) public {
+        uint allLpAmountOut;
+        uint stakeTokenAmountOut;
+
+        for (uint i = 0; i < stakeIds.length; i++) {
+            address staker = stakes[stakeIds[i]].staker;
+
+            require(msg.sender == staker, "ImplAndTerms::unstake: msg.sender is not staker");
+
+            uint lpAmountOut = stakes[stakeIds[i]].lpAmount;
+            allLpAmountOut += lpAmountOut;
+
+            uint amountOut = calcAmountOut(lpAmountOut);
+            stakeTokenAmountOut += amountOut;
+
+            emit Unstake(stakeIds[i], msg.sender, amountOut);
+        }
+
+        _burn(msg.sender, allLpAmountOut);
+        doTransferOut(stakeToken, msg.sender, stakeTokenAmountOut);
     }
 
     function calcAmountOut(uint lpAmountIn) public view returns (uint) {
@@ -104,5 +205,9 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
             }
         }
         require(success, "TOKEN_TRANSFER_OUT_FAILED");
+    }
+
+    function getDeveloperAddress() public view returns (address) {
+        return 0x5d51C0C611084c77097a9FC22E58F2aCF4b0688D;
     }
 }
