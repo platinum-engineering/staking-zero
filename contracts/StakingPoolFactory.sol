@@ -18,18 +18,19 @@ contract StakingPoolFactory {
      * @param owner_ The owner of the staking contract
      * @param stakeToken_ The address of the staking asset
      */
-    function createStakingPool(address owner_, address implAndTerms_, address stakeToken_) external returns (bool) {
+    function createStakingPool(address owner_, address implAndTerms_, address whitelist_, address stakeToken_) external returns (bool) {
         require(
             owner_ != address(0)
             && implAndTerms_ != address(0)
-            && stakeToken_ != address(0),
+            && stakeToken_ != address(0)
+            && whitelist_ != address(0),
             "StakingPoolFactory::createStakingPool: address is 0"
         );
 
 
         (string memory name, string memory symbol) = _createNameAndSymbol(stakeToken_);
 
-        StakingPool newPool = new StakingPool(implAndTerms_, stakeToken_, name, symbol);
+        StakingPool newPool = new StakingPool(implAndTerms_, whitelist_, stakeToken_, name, symbol);
 
         newPool.transferOwnership(owner_);
 
