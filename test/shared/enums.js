@@ -14,6 +14,8 @@ const revertMessages = {
     ERC20TransferTo0Address: 'ERC20: transfer to the zero address',
     ERC20DecreasedAllowanceBelowZero: 'ERC20: decreased allowance below zero',
     ERC20ApproveTo0: 'ERC20: approve to the zero address',
+    refererOrInfluencerEqualsToSender: 'ImplAndTerms::stakeInternal: referer of influencer address equals to staker address',
+    senderIsNotStaker: 'ImplAndTerms::unstake: msg.sender is not staker',
 };
 
 module.exports = {

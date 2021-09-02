@@ -67,6 +67,11 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     }
 
     function stakeInternal(address staker, uint tokenAmount, address referer, address influencer, bool donatsForDevelopers) internal {
+        require(
+            referer != staker && influencer != staker,
+            "ImplAndTerms::stakeInternal: referer of influencer address equals to staker address"
+        );
+
         uint amountIn = doTransferIn(staker, stakeToken, tokenAmount);
 
         uint stakerLpAmount = calcStakerLPAmount(amountIn);
@@ -108,7 +113,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         return (stakerLpAmountOut, refererLpAmountOut, influencerLpAmountOut, developerLpAmountOut);
     }
 
-    function calcStakerLPAmount(uint amountIn) public view returns (uint) {
+    function calcStakerLPAmount(uint amountIn) public pure returns (uint) {
         return amountIn;
     }
 
@@ -155,7 +160,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         doTransferOut(stakeToken, msg.sender, stakeTokenAmountOut);
     }
 
-    function calcAmountOut(uint lpAmountIn) public view returns (uint) {
+    function calcAmountOut(uint lpAmountIn) public pure returns (uint) {
         uint amountOut = lpAmountIn;
 
         return amountOut;
@@ -207,7 +212,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         require(success, "TOKEN_TRANSFER_OUT_FAILED");
     }
 
-    function getDeveloperAddress() public view returns (address) {
-        return 0x5d51C0C611084c77097a9FC22E58F2aCF4b0688D;
+    function getDeveloperAddress() public pure returns (address) {
+        return 0x8aA2ccb35f90EFf1c6f38ed43e550b67E8aDC728;
     }
 }

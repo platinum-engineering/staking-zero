@@ -28,7 +28,8 @@ module.exports = {
     defaultNetwork: "hardhat",
     networks: {
         hardhat: {
-            initialBaseFeePerGas: 0
+            initialBaseFeePerGas: 0,
+            accounts: { mnemonic: process.env.ETHEREUM_HARDHAT_MNEMONIC },
         },
         mainnet: {
             url: process.env.ETHEREUM_MAINNET_URL,
