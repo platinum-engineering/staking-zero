@@ -13,11 +13,15 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     uint public refererBonusPercent;
     uint public influencerBonusPercent;
     uint public developerBonusPercent;
+    uint public timeBonusPercent;
 
+    uint public timeNormalizer = 365 days;
     uint public stakeCounter;
 
     struct StakeData {
         address staker;
+        uint stakeTime;
+        uint holdTime;
         uint lpAmount;
     }
 
@@ -44,6 +48,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         refererBonusPercent = 0.5e18; // 0.5%
         influencerBonusPercent = 0.75e18; // 0.75%
         developerBonusPercent = 0.2e18; // 0.2%
+        timeBonusPercent = 10e18; // 10%
 
         super.initialize(name_, symbol_);
     }
@@ -51,22 +56,26 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     // transfer stake tokens from user to pool
     // mint lp tokens from pool to user
     function stake(uint tokenAmount) public {
-        stakeInternal(msg.sender, tokenAmount, address(0), address(0), false);
+        stakeInternal(msg.sender, tokenAmount, 0, address(0), address(0), false);
     }
 
-    function stake(uint tokenAmount, address referer) public {
-        stakeInternal(msg.sender, tokenAmount, referer, address(0), false);
+    function stake(uint tokenAmount, uint holdTime) public {
+        stakeInternal(msg.sender, tokenAmount, holdTime, address(0), address(0), false);
     }
 
-    function stake(uint tokenAmount, address referer, address influencer) public {
-        stakeInternal(msg.sender, tokenAmount, referer, influencer, false);
+    function stake(uint tokenAmount, uint holdTime, address referer) public {
+        stakeInternal(msg.sender, tokenAmount, holdTime, referer, address(0), false);
     }
 
-    function stake(uint tokenAmount, address referer, address influencer, bool donatForDeveloper) public {
-        stakeInternal(msg.sender, tokenAmount, referer, influencer, donatForDeveloper);
+    function stake(uint tokenAmount, uint holdTime, address referer, address influencer) public {
+        stakeInternal(msg.sender, tokenAmount, holdTime, referer, influencer, false);
     }
 
-    function stakeInternal(address staker, uint tokenAmount, address referer, address influencer, bool donatsForDevelopers) internal {
+    function stake(uint tokenAmount, uint holdTime, address referer, address influencer, bool donatForDeveloper) public {
+        stakeInternal(msg.sender, tokenAmount, holdTime, referer, influencer, donatForDeveloper);
+    }
+
+    function stakeInternal(address staker, uint tokenAmount, uint holdTime, address referer, address influencer, bool donatsForDevelopers) internal {
         require(
             referer != staker && influencer != staker,
             "ImplAndTerms::stakeInternal: referer of influencer address equals to staker address"
@@ -74,12 +83,12 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
 
         uint amountIn = doTransferIn(staker, stakeToken, tokenAmount);
 
-        uint stakerLpAmount = calcStakerLPAmount(amountIn);
+        uint stakerLpAmount = calcStakerLPAmount(amountIn, holdTime);
 
-        stakeFresh(staker, stakerLpAmount);
+        stakeFresh(staker, holdTime, stakerLpAmount);
 
         if (referer != address(0)) {
-            stakeFresh(referer, calcRefererLPAmount(amountIn));
+            stakeFresh(referer, 0, calcRefererLPAmount(amountIn));
         }
 
         if (influencer != address(0)) {
@@ -87,25 +96,25 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
 
             require(isInfluencer, "ImplAndTerms::stakeInternal: influencer is not in whitelist");
 
-            stakeFresh(influencer, calcInfluencerLpAmount(amountIn));
+            stakeFresh(influencer, 0, calcInfluencerLpAmount(amountIn));
         }
 
         if (donatsForDevelopers) {
-            stakeFresh(getDeveloperAddress(), calcDeveloperLPAmount(amountIn));
+            stakeFresh(getDeveloperAddress(), 0, calcDeveloperLPAmount(amountIn));
         }
     }
 
-    function stakeFresh(address staker, uint lpAmountOut) internal {
+    function stakeFresh(address staker, uint holdTime, uint lpAmountOut) internal {
         _mint(staker, lpAmountOut);
 
         stakeCounter++;
-        stakes[stakeCounter] = StakeData({staker: staker, lpAmount: lpAmountOut});
+        stakes[stakeCounter] = StakeData({staker: staker, stakeTime: block.timestamp, holdTime: holdTime, lpAmount: lpAmountOut});
 
         emit Stake(stakeCounter, staker, lpAmountOut);
     }
 
-    function calcAllLPAmountOut(uint amountIn) public view returns (uint, uint, uint, uint) {
-        uint stakerLpAmountOut = calcStakerLPAmount(amountIn);
+    function calcAllLPAmountOut(uint amountIn, uint holdTime) public view returns (uint, uint, uint, uint) {
+        uint stakerLpAmountOut = calcStakerLPAmount(amountIn, holdTime);
         uint refererLpAmountOut = calcRefererLPAmount(amountIn);
         uint influencerLpAmountOut = calcInfluencerLpAmount(amountIn);
         uint developerLpAmountOut = calcDeveloperLPAmount(amountIn);
@@ -113,8 +122,12 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         return (stakerLpAmountOut, refererLpAmountOut, influencerLpAmountOut, developerLpAmountOut);
     }
 
-    function calcStakerLPAmount(uint amountIn) public pure returns (uint) {
-        return amountIn;
+    function calcStakerLPAmount(uint amountIn, uint holdTime) public view returns (uint) {
+        return amountIn + calcBonusTime(amountIn, holdTime);
+    }
+
+    function calcBonusTime(uint amount, uint holdTime) public view returns (uint) {
+        return amount * holdTime * timeBonusPercent / 100e18 / timeNormalizer;
     }
 
     function calcRefererLPAmount(uint amountIn) public view returns (uint) {
