@@ -1,19 +1,20 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
 const {revertMessages} = require("./shared/enums");
+const init = require("./shared/initTests");
 
 describe('ERC20Init', async () => {
 
-    let ERC20Init, eRC20Init;
-    let owner, user1, user2;
-
+    let eRC20Init;
+    let helper;
+    const AMOUNT = 10;
+    const DECREASE_AMOUNT = 5;
+    
     before(async () => {
-        ERC20Init = await ethers.getContractFactory('ERC20Init');
-        [owner, user1, user2] = await ethers.getSigners();
+        helper = await init();
     });
 
     beforeEach(async () => {
-        eRC20Init = await ERC20Init.deploy();
+        eRC20Init = await helper.deployOneContract('ERC20Init');
     });
 
     describe('Transactions', async () => {
@@ -49,87 +50,75 @@ describe('ERC20Init', async () => {
             expect(totalSupply).to.be.equal(0);
         });
         
-        it('Should approve 10 wei', async () => {
-            const amount = 10;
-            let allowance = await eRC20Init.allowance(owner.address, user1.address);
+        it('Should success approve', async () => {
+            let allowance = await eRC20Init.allowance(helper.OWNER.address, helper.STAKER.address);
     
             expect(allowance).to.be.equal(0);
     
-            await eRC20Init.approve(user1.address, amount);
+            await eRC20Init.approve(helper.STAKER.address, AMOUNT);
             
-            allowance = await eRC20Init.allowance(owner.address, user1.address);
+            allowance = await eRC20Init.allowance(helper.OWNER.address, helper.STAKER.address);
     
-            expect(allowance).to.be.equal(amount);
+            expect(allowance).to.be.equal(AMOUNT);
         });
         
         it('Should fail approve to zero address', async () => {
-            const amount = 10;
-            await expect(eRC20Init.approve(ethers.constants.AddressZero, amount))
+            await expect(eRC20Init.approve(helper.ADDRESS_ZERO, AMOUNT))
                 .to.be.revertedWith(revertMessages.ERC20ApproveTo0);
         });
         
         it('Should increase allowance on 10 wei', async () => {
-            const amount = 10;
-            await eRC20Init.approve(user1.address, amount);
-            await eRC20Init.increaseAllowance(user1.address, amount);
+            await eRC20Init.approve(helper.STAKER.address, AMOUNT);
+            await eRC20Init.increaseAllowance(helper.STAKER.address, AMOUNT);
             
-            allowance = await eRC20Init.allowance(owner.address, user1.address);
+            allowance = await eRC20Init.allowance(helper.OWNER.address, helper.STAKER.address);
     
-            expect(allowance).to.be.equal(amount * 2);
+            expect(allowance).to.be.equal(AMOUNT * 2);
         });
         
         it('Should fail increase allowance to zero address', async () => {
-            const amount = 10;
-            await expect(eRC20Init.increaseAllowance(ethers.constants.AddressZero, amount))
+            await expect(eRC20Init.increaseAllowance(helper.ADDRESS_ZERO, AMOUNT))
                 .to.be.revertedWith(revertMessages.ERC20ApproveTo0);
             
         });
         
         it('Should decrease allowance on 10 wei', async () => {
-            const amount = 10;
-            const decreasingAmount = 5;
-            await eRC20Init.approve(user1.address, amount);
-            await eRC20Init.decreaseAllowance(user1.address, decreasingAmount);
+            await eRC20Init.approve(helper.STAKER.address, AMOUNT);
+            await eRC20Init.decreaseAllowance(helper.STAKER.address, DECREASE_AMOUNT);
             
-            allowance = await eRC20Init.allowance(owner.address, user1.address);
+            allowance = await eRC20Init.allowance(helper.OWNER.address, helper.STAKER.address);
     
-            expect(allowance).to.be.equal(amount - decreasingAmount);
+            expect(allowance).to.be.equal(AMOUNT - DECREASE_AMOUNT);
         });
     
         it('Should fail decrease allowance due to below zero', async () => {
-            const amount = 10;
-            await expect(eRC20Init.decreaseAllowance(user1.address, amount))
+            await expect(eRC20Init.decreaseAllowance(helper.STAKER.address, AMOUNT))
                 .to.be.revertedWith(revertMessages.ERC20DecreasedAllowanceBelowZero);
         
         });
         
         it('Should fail transfer due to exceeds balance', async () => {
-            const amount = 10;
-            await expect(eRC20Init.transfer(user1.address, amount))
+            await expect(eRC20Init.transfer(helper.STAKER.address, AMOUNT))
                 .to.be.revertedWith(revertMessages.transferAmountExceedsBalance);
         });
         
         it('Should fail transfer to zero address', async () => {
-            const amount = 10;
-            await expect(eRC20Init.transfer(ethers.constants.AddressZero, amount))
+            await expect(eRC20Init.transfer(helper.ADDRESS_ZERO, AMOUNT))
                 .to.be.revertedWith(revertMessages.ERC20TransferTo0Address);
         });
         
         it('Should fail transferFrom due to exceeds balance', async () => {
-            const amount = 10;
-            await expect(eRC20Init.transferFrom(owner.address, user1.address, amount))
+            await expect(eRC20Init.transferFrom(helper.OWNER.address, helper.STAKER.address, AMOUNT))
                 .to.be.revertedWith(revertMessages.transferAmountExceedsBalance);
         });
         
         it('Should fail transferFrom due from zero address', async () => {
-            const amount = 10;
-            await expect(eRC20Init.transferFrom(ethers.constants.AddressZero, user1.address, amount))
+            await expect(eRC20Init.transferFrom(helper.ADDRESS_ZERO, helper.STAKER.address, AMOUNT))
                 .to.be.revertedWith(revertMessages.ERC20TransferFrom0Address);
         });
         
         it('Should fail transferFrom due to zero address', async () => {
-            const amount = 10;
-            await expect(eRC20Init.transferFrom(owner.address, ethers.constants.AddressZero, amount))
+            await expect(eRC20Init.transferFrom(helper.OWNER.address, helper.ADDRESS_ZERO, AMOUNT))
                 .to.be.revertedWith(revertMessages.ERC20TransferTo0Address);
         });
     });

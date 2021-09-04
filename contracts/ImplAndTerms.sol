@@ -15,19 +15,20 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     uint public developerBonusPercent;
     uint public timeBonusPercent;
 
-    uint public timeNormalizer = 365 days;
+    uint public timeNormalizer;
+    uint public unHoldFee;
     uint public stakeCounter;
 
     struct StakeData {
         address staker;
+        uint lpAmount;
         uint stakeTime;
         uint holdTime;
-        uint lpAmount;
     }
 
     mapping(uint => StakeData) public stakes;
 
-    event Stake(uint stakeId, address indexed from, uint lpAmountOut);
+    event Stake(uint stakeId, address indexed from, uint lpAmountOut, uint holdTime);
     event Unstake(uint stakeId, address indexed to, uint stakeTokenAmountOut);
 
     function initialize(
@@ -49,6 +50,9 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         influencerBonusPercent = 0.75e18; // 0.75%
         developerBonusPercent = 0.2e18; // 0.2%
         timeBonusPercent = 10e18; // 10%
+        unHoldFee = 20e18; // 20%
+
+        timeNormalizer = 365 days;
 
         super.initialize(name_, symbol_);
     }
@@ -108,9 +112,9 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         _mint(staker, lpAmountOut);
 
         stakeCounter++;
-        stakes[stakeCounter] = StakeData({staker: staker, stakeTime: block.timestamp, holdTime: holdTime, lpAmount: lpAmountOut});
+        stakes[stakeCounter] = StakeData({staker: staker, lpAmount: lpAmountOut, stakeTime: block.timestamp, holdTime: holdTime});
 
-        emit Stake(stakeCounter, staker, lpAmountOut);
+        emit Stake(stakeCounter, staker, lpAmountOut, holdTime);
     }
 
     function calcAllLPAmountOut(uint amountIn, uint holdTime) public view returns (uint, uint, uint, uint) {
@@ -154,16 +158,19 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     function unstake(uint[] memory stakeIds) public {
         uint allLpAmountOut;
         uint stakeTokenAmountOut;
+        address staker;
+        uint lpAmountOut;
+        uint stakeTime;
+        uint holdTime;
 
         for (uint i = 0; i < stakeIds.length; i++) {
-            address staker = stakes[stakeIds[i]].staker;
+            (staker, lpAmountOut, stakeTime, holdTime) = getStake(stakeIds[i]);
 
             require(msg.sender == staker, "ImplAndTerms::unstake: msg.sender is not staker");
 
-            uint lpAmountOut = stakes[stakeIds[i]].lpAmount;
             allLpAmountOut += lpAmountOut;
 
-            uint amountOut = calcAmountOut(lpAmountOut);
+            uint amountOut = calcAmountOut(lpAmountOut, block.timestamp, stakeTime, holdTime);
             stakeTokenAmountOut += amountOut;
 
             emit Unstake(stakeIds[i], msg.sender, amountOut);
@@ -173,10 +180,14 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         doTransferOut(stakeToken, msg.sender, stakeTokenAmountOut);
     }
 
-    function calcAmountOut(uint lpAmountIn) public pure returns (uint) {
-        uint amountOut = lpAmountIn;
+    function calcAmountOut(uint lpAmountIn, uint timestamp, uint stakeTime, uint holdTime) public view returns (uint) {
+        uint feeAmount;
 
-        return amountOut;
+        if (timestamp - stakeTime < holdTime) {
+            feeAmount = lpAmountIn * unHoldFee * (timestamp - stakeTime) / holdTime / 100e18;
+        }
+
+        return lpAmountIn - feeAmount;
     }
 
     function doTransferIn(address from, address token, uint amount) internal returns (uint) {
@@ -227,5 +238,9 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
 
     function getDeveloperAddress() public pure returns (address) {
         return 0x8aA2ccb35f90EFf1c6f38ed43e550b67E8aDC728;
+    }
+
+    function getStake(uint id) public view returns (address, uint, uint, uint) {
+        return (stakes[id].staker, stakes[id].lpAmount, stakes[id].stakeTime, stakes[id].holdTime);
     }
 }
