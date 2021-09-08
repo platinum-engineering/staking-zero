@@ -17,19 +17,18 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
 
     uint public timeNormalizer;
     uint public unHoldFee;
-    uint public stakeCounter;
 
     struct StakeData {
-        address staker;
         uint lpAmount;
         uint stakeTime;
         uint holdTime;
+        bool status; // true is active
     }
 
-    mapping(uint => StakeData) public stakes;
+    mapping(address => StakeData[]) public userStakes;
 
-    event Stake(uint stakeId, address indexed from, uint lpAmountOut, uint holdTime);
-    event Unstake(uint stakeId, address indexed to, uint stakeTokenAmountOut);
+    event Stake(address indexed staker, uint userStakeId, uint lpAmountOut, uint holdTime);
+    event Unstake(address indexed staker, uint userStakeId, uint stakeTokenAmountOut);
 
     function initialize(
         address whitelist_,
@@ -37,6 +36,8 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         string memory name_,
         string memory symbol_
     ) public {
+        require(whitelist == address(0) && stakeToken == address(0), "ImplAndTerms may only be initialized once");
+
         require(
             whitelist_ != address(0)
             && stakeToken_ != address(0),
@@ -111,10 +112,9 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     function stakeFresh(address staker, uint holdTime, uint lpAmountOut) internal {
         _mint(staker, lpAmountOut);
 
-        stakeCounter++;
-        stakes[stakeCounter] = StakeData({staker: staker, lpAmount: lpAmountOut, stakeTime: block.timestamp, holdTime: holdTime});
+        userStakes[staker].push(StakeData({lpAmount: lpAmountOut, stakeTime: block.timestamp, holdTime: holdTime, status: true}));
 
-        emit Stake(stakeCounter, staker, lpAmountOut, holdTime);
+        emit Stake(staker, userStakes[staker].length, lpAmountOut, holdTime);
     }
 
     function calcAllLPAmountOut(uint amountIn, uint holdTime) public view returns (uint, uint, uint, uint) {
@@ -148,32 +148,38 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
 
     // burn lp tokens from user
     // transfer stake tokens from pool to user
-    function unstake(uint stakeId) external {
-        uint[] memory stakeIds = new uint[](1);
-        stakeIds[0] = stakeId;
+    function unstake(uint userStakeId) external {
+        uint[] memory userStakeIds = new uint[](1);
+        userStakeIds[0] = userStakeId;
 
-        unstake(stakeIds);
+        unstake(userStakeIds);
     }
 
-    function unstake(uint[] memory stakeIds) public {
+    function unstake(uint[] memory userStakeIds) public {
         uint allLpAmountOut;
         uint stakeTokenAmountOut;
-        address staker;
         uint lpAmountOut;
         uint stakeTime;
         uint holdTime;
+        bool status;
 
-        for (uint i = 0; i < stakeIds.length; i++) {
-            (staker, lpAmountOut, stakeTime, holdTime) = getStake(stakeIds[i]);
+        for (uint i = 0; i < userStakeIds.length; i++) {
+            require(userStakeIds[i] < userStakes[msg.sender].length, "ImplAndTerms::unstake: stake is not exist");
+        }
 
-            require(msg.sender == staker, "ImplAndTerms::unstake: msg.sender is not staker");
+        for (uint i = 0; i < userStakeIds.length; i++) {
+            (lpAmountOut, stakeTime, holdTime, status) = getUserStake(msg.sender, userStakeIds[i]);
+
+            require(status, "ImplAndTerms::unstake: stake is not active");
 
             allLpAmountOut += lpAmountOut;
 
             uint amountOut = calcAmountOut(lpAmountOut, block.timestamp, stakeTime, holdTime);
             stakeTokenAmountOut += amountOut;
 
-            emit Unstake(stakeIds[i], msg.sender, amountOut);
+            userStakes[msg.sender][userStakeIds[i]].status = false;
+
+            emit Unstake(msg.sender, userStakeIds[i], amountOut);
         }
 
         _burn(msg.sender, allLpAmountOut);
@@ -188,6 +194,63 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         }
 
         return lpAmountIn - feeAmount;
+    }
+
+    function getDeveloperAddress() public pure returns (address) {
+        return 0x8aA2ccb35f90EFf1c6f38ed43e550b67E8aDC728;
+    }
+
+    function getUserStake(address user, uint id) public view returns (uint, uint, uint, bool) {
+        return (userStakes[user][id].lpAmount, userStakes[user][id].stakeTime, userStakes[user][id].holdTime, userStakes[user][id].status);
+    }
+
+    function getAllUserStakes(address user) public view returns (StakeData[] memory) {
+        return userStakes[user];
+    }
+
+    function getActiveUserStakes(address user) public view returns (StakeData[] memory) {
+        StakeData[] memory allUserActiveStakesTmp = new StakeData[](userStakes[user].length);
+        uint j = 0;
+        for (uint i = 0; i < userStakes[user].length; i++) {
+            if (userStakes[user][i].status) {
+                allUserActiveStakesTmp[j] = userStakes[user][i];
+                j++;
+            }
+        }
+
+        StakeData[] memory allUserActiveStakes = new StakeData[](j);
+        for (uint i = 0; i < j; i++) {
+            allUserActiveStakes[i] = allUserActiveStakesTmp[i];
+        }
+
+        return allUserActiveStakes;
+    }
+
+    function getTokenAmountAfterUnstake(uint stakeUserId) public view returns (uint) {
+        StakeData memory stakeData = userStakes[msg.sender][stakeUserId];
+
+        require(stakeData.status, "ImplAndTerms::getTokenAmountAfterUnstake: stake is not active");
+
+        return calcAmountOut(stakeData.lpAmount, block.timestamp, stakeData.stakeTime, stakeData.holdTime);
+    }
+
+    function getTokenAmountAfterAllUnstakes(address user) public view returns (uint) {
+        uint stakeTokenAmountOut;
+        uint lpAmountOut;
+        uint stakeTime;
+        uint holdTime;
+        bool status;
+
+        for (uint i = 0; i < userStakes[user].length; i++) {
+            (lpAmountOut, stakeTime, holdTime, status) = getUserStake(msg.sender, i);
+
+            if (status) {
+                uint amountOut = calcAmountOut(lpAmountOut, block.timestamp, stakeTime, holdTime);
+                stakeTokenAmountOut += amountOut;
+            }
+        }
+
+        return stakeTokenAmountOut;
     }
 
     function doTransferIn(address from, address token, uint amount) internal returns (uint) {
@@ -234,13 +297,5 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
             }
         }
         require(success, "TOKEN_TRANSFER_OUT_FAILED");
-    }
-
-    function getDeveloperAddress() public pure returns (address) {
-        return 0x8aA2ccb35f90EFf1c6f38ed43e550b67E8aDC728;
-    }
-
-    function getStake(uint id) public view returns (address, uint, uint, uint) {
-        return (stakes[id].staker, stakes[id].lpAmount, stakes[id].stakeTime, stakes[id].holdTime);
     }
 }
