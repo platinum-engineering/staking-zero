@@ -2,7 +2,7 @@ const {ethers} = require('hardhat');
 const constants = require('./constants');
 const utils = require('./utils');
 const enums = require('./enums');
-
+const { expect } = require('chai');
 const BN = ethers.BigNumber.from;
 const init = async () => {
     const [
@@ -61,6 +61,27 @@ const init = async () => {
     
     const calcStakerAmountWithFee = () =>
         BN(STAKER_AMOUNT_WITH_TIME_BONUS).sub(BN(STAKER_AMOUNT_WITH_TIME_BONUS).mul(constants.UNHOLD_FEE_PERCENT).mul(constants.TIME_DIFF_LT_HOLD_TIME).div(constants.HOLD_TIME).div(100));
+    
+    const checkUserStakes = async (contract, data) => {
+        const p = [];
+        for (const item of data) {
+            const { account, indexes, amounts, holdTimes, statuses } = item;
+            for (let i = 0; i < indexes.length; i ++) {
+                p.push(contract.userStakes(account.address, i).then(res => {
+                    expect(res[0]).to.be.equal(amounts[i]);
+                    expect(res[2]).to.be.equal(holdTimes[i]);
+                    expect(res[3]).to.be.equal(statuses[i]);
+                }));
+            }
+        }
+        return Promise.all(p);
+    };
+    
+    const getCurrentBlockTimestamp = async () => {
+        const blockNum = await ethers.provider.getBlockNumber();
+        const block = await ethers.provider.getBlock(blockNum);
+        return block.timestamp;
+    }
 
     return {
         ...data,
@@ -74,6 +95,9 @@ const init = async () => {
         INFLUENCER_AMOUNT_WITH_TIME_BONUS,
         DEVELOPER_AMOUNT_WITH_TIME_BONUS,
         calcStakerAmountWithFee,
+        checkUserStakes,
+        BN,
+        getCurrentBlockTimestamp,
     };
 }
 
