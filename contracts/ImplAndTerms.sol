@@ -18,6 +18,13 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     uint public timeNormalizer;
     uint public unHoldFee;
 
+    // for inflation
+    uint public inflationPercent;
+    address public reservoir;
+    uint public totalStaked;
+    uint public accrualBlockTimestamp;
+    uint public inflationRatePerSec;
+
     struct StakeData {
         uint lpAmount;
         uint stakeTime;
@@ -30,9 +37,12 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     event Stake(address indexed staker, uint userStakeId, uint lpAmountOut, uint holdTime);
     event Unstake(address indexed staker, uint userStakeId, uint stakeTokenAmountOut);
 
+    event AccrueInterest(uint interestAccumulated, uint totalStaked);
+
     function initialize(
         address whitelist_,
         address stakeToken_,
+        address reservoir_,
         string memory name_,
         string memory symbol_
     ) public {
@@ -40,7 +50,8 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
 
         require(
             whitelist_ != address(0)
-            && stakeToken_ != address(0),
+            && stakeToken_ != address(0)
+            && reservoir_ != address(0),
             "ImplAndTerms::initialize: address is 0"
         );
 
@@ -52,8 +63,13 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         developerBonusPercent = 0.2e18; // 0.2%
         timeBonusPercent = 10e18; // 10%
         unHoldFee = 20e18; // 20%
+        inflationPercent = 5e18; // 5%
 
         timeNormalizer = 365 days;
+
+        reservoir = reservoir_;
+        accrualBlockTimestamp = getBlockTimestamp();
+        inflationRatePerSec = inflationPercent / 365 days;
 
         super.initialize(name_, symbol_);
     }
@@ -86,7 +102,10 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
             "ImplAndTerms::stakeInternal: referer of influencer address equals to staker address"
         );
 
+        accrueInterest();
+
         uint amountIn = doTransferIn(staker, stakeToken, tokenAmount);
+        totalStaked += amountIn;
 
         uint stakerLpAmount = calcStakerLPAmount(amountIn, holdTime);
 
@@ -156,6 +175,8 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     }
 
     function unstake(uint[] memory userStakeIds) public {
+        accrueInterest();
+
         uint allLpAmountOut;
         uint stakeTokenAmountOut;
         uint lpAmountOut;
@@ -183,6 +204,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         }
 
         _burn(msg.sender, allLpAmountOut);
+        totalStaked -= stakeTokenAmountOut;
         doTransferOut(stakeToken, msg.sender, stakeTokenAmountOut);
     }
 
@@ -194,6 +216,35 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         }
 
         return lpAmountIn - feeAmount;
+    }
+
+    function accrueInterest() public {
+        /* Remember the initial block timestamp */
+        uint currentBlockTimestamp = getBlockTimestamp();
+
+        /* Short-circuit accumulating 0 interest */
+        if (accrualBlockTimestamp == currentBlockTimestamp) {
+            return;
+        }
+
+        /* Calculate the time of timestamps elapsed since the last accrual */
+        uint timeDelta = currentBlockTimestamp - accrualBlockTimestamp;
+
+        /*
+         * Calculate the interest accumulated:
+         *  interestAccumulated = inflationRatePerSec * timeDelta * totalStaked
+         *  totalStakedNew = interestAccumulated + totalStaked
+         */
+
+        uint interestAccumulated = inflationRatePerSec * timeDelta * totalStaked;
+        doTransferIn(reservoir, stakeToken, interestAccumulated);
+
+        totalStaked = totalStaked + interestAccumulated;
+
+        /* We write the previously calculated values into storage */
+        accrualBlockTimestamp = currentBlockTimestamp;
+
+        emit AccrueInterest(interestAccumulated, totalStaked);
     }
 
     function getDeveloperAddress() public pure returns (address) {
@@ -251,6 +302,14 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         }
 
         return stakeTokenAmountOut;
+    }
+
+    /**
+     * @dev Function to simply retrieve block number
+     *  This exists mainly for inheriting test contracts to stub this result.
+     */
+    function getBlockTimestamp() internal virtual view returns (uint) {
+        return block.timestamp;
     }
 
     function doTransferIn(address from, address token, uint amount) internal returns (uint) {
