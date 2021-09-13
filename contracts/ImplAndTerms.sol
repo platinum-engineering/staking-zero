@@ -186,9 +186,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
 
         for (uint i = 0; i < userStakeIds.length; i++) {
             require(userStakeIds[i] < userStakes[msg.sender].length, "ImplAndTerms::unstake: stake is not exist");
-        }
 
-        for (uint i = 0; i < userStakeIds.length; i++) {
             (lpAmountOut, stakeTime, holdTime, status) = getUserStake(msg.sender, userStakeIds[i]);
 
             require(status, "ImplAndTerms::unstake: stake is not active");
@@ -211,11 +209,14 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     function calcAmountOut(uint lpAmountIn, uint timestamp, uint stakeTime, uint holdTime) public view returns (uint) {
         uint feeAmount;
 
-        if (timestamp - stakeTime < holdTime) {
-            feeAmount = lpAmountIn * unHoldFee * (timestamp - stakeTime) / holdTime / 100e18;
+        uint delta = (timestamp - stakeTime);
+        uint tokenAmountOut = lpAmountIn + (lpAmountIn * delta * inflationRatePerSec / 100e18);
+
+        if (delta < holdTime) {
+            feeAmount = tokenAmountOut * unHoldFee * delta / holdTime / 100e18;
         }
 
-        return lpAmountIn - feeAmount;
+        return tokenAmountOut - feeAmount;
     }
 
     function accrueInterest() public {
@@ -236,7 +237,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
          *  totalStakedNew = interestAccumulated + totalStaked
          */
 
-        uint interestAccumulated = inflationRatePerSec * timeDelta * totalStaked;
+        uint interestAccumulated = inflationRatePerSec * timeDelta * totalStaked  / 100e18;
         doTransferIn(reservoir, stakeToken, interestAccumulated);
 
         totalStaked = totalStaked + interestAccumulated;
