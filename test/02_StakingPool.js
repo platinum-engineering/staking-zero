@@ -19,7 +19,7 @@ describe('Staking pool', async () => {
     beforeEach(async () => {
         stakeToken = await helper.getStakeToken();
         [implAndTerms, whitelist] = await helper.deployManyContracts(['ImplAndTerms', 'Whitelist']);
-        stakingPool = await helper.StakingPool.deploy(implAndTerms.address, whitelist.address, stakeToken.address, helper.LP_TOKEN_NAME, helper.LP_TOKEN_SYMBOL);
+        stakingPool = await helper.StakingPool.deploy(implAndTerms.address, whitelist.address, stakeToken.address, reservoir.address, helper.LP_TOKEN_NAME, helper.LP_TOKEN_SYMBOL);
         implemented = helper.ImplAndTerms.attach(stakingPool.address);
     });
 
@@ -35,17 +35,17 @@ describe('Staking pool', async () => {
             });
 
             it('Should fail deploy Staking Pool due to zero implementation address', async () => {
-                await expect(helper.StakingPool.deploy(helper.ADDRESS_ZERO, whitelist.address, stakeToken.address, helper.LP_TOKEN_NAME, helper.LP_TOKEN_SYMBOL))
+                await expect(helper.StakingPool.deploy(helper.ADDRESS_ZERO, whitelist.address, stakeToken.address, reservoir.address, helper.LP_TOKEN_NAME, helper.LP_TOKEN_SYMBOL))
                   .to.be.revertedWith(helper.getAddressIs0ErrorMessage('StakingPool', 'constructor'));
             });
 
             it('Should fail deploy Staking Pool due to zero stake token address', async () => {
-                await expect(helper.StakingPool.deploy(implAndTerms.address, whitelist.address, helper.ADDRESS_ZERO, helper.LP_TOKEN_NAME, helper.LP_TOKEN_SYMBOL))
+                await expect(helper.StakingPool.deploy(implAndTerms.address, whitelist.address, helper.ADDRESS_ZERO, reservoir.address, helper.LP_TOKEN_NAME, helper.LP_TOKEN_SYMBOL))
                   .to.be.revertedWith(helper.getAddressIs0ErrorMessage('StakingPool', 'constructor'));
             });
 
             it('Should fail initialize already initialized ImplAndTerms', async () => {
-                await expect(implemented['initialize(address,address,string,string)'](helper.ADDRESS_ZERO, helper.ADDRESS_ZERO, helper.LP_TOKEN_NAME, helper.LP_TOKEN_SYMBOL))
+                await expect(implemented['initialize(address,address,address,string,string)'](helper.ADDRESS_ZERO, helper.ADDRESS_ZERO, reservoir.address, helper.LP_TOKEN_NAME, helper.LP_TOKEN_SYMBOL))
                   .to.be.revertedWith(helper.revertMessages.mayOnlyBeInitializedOnce);
             });
         });

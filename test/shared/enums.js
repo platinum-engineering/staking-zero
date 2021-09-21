@@ -19,7 +19,7 @@ const revertMessages = {
     stakeIsNotExist: 'ImplAndTerms::unstake: stake is not exist',
     stakeIsNotActive: 'ImplAndTerms::unstake: stake is not active',
     afterUnstakeStakeIsNotActive: 'ImplAndTerms::getTokenAmountAfterUnstake: stake is not active',
-    mayOnlyBeInitializedOnce: 'ImplAndTerms may only be initialized once',
+    mayOnlyBeInitializedOnce: 'ImplAndTerms::initialize: may only be initialized once',
     influencerIsNotInWhitelist: 'ImplAndTerms::stakeInternal: influencer is not in whitelist',
 };
 

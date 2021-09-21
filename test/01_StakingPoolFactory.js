@@ -16,12 +16,12 @@ describe('Staking pool factory', async () => {
 
     beforeEach(async () => {
         stakeToken = await helper.getStakeToken();
-        [stakingPoolFactory, implAndTerms, whitelist] = await helper.deployManyContracts(['StakingPoolFactory', 'ImplAndTerms', 'Whitelist']);
+        [stakingPoolFactory, implAndTerms, whitelist, reservoir] = await helper.deployManyContracts(['StakingPoolFactory', 'ImplAndTerms', 'Whitelist', 'Reservoir']);
     });
 
     describe('Transactions', async () => {
         it('deploy new StakingPool and check data', async () => {
-            const tx = await (await stakingPoolFactory.createStakingPool(helper.OWNER.address, implAndTerms.address, whitelist.address, stakeToken.address)).wait();
+            const tx = await (await stakingPoolFactory.createStakingPool(helper.OWNER.address, implAndTerms.address, whitelist.address, stakeToken.address, reservoir.address)).wait();
             const event = tx.events.find(e => e.event === helper.eventsName.StakingPoolCreated);
             const address = event.args[0];
 
@@ -41,17 +41,17 @@ describe('Staking pool factory', async () => {
         });
         
         it('Should fail due to zero owner address', async () => {
-            await expect(stakingPoolFactory.createStakingPool(helper.ADDRESS_ZERO, implAndTerms.address, whitelist.address, stakeToken.address))
+            await expect(stakingPoolFactory.createStakingPool(helper.ADDRESS_ZERO, implAndTerms.address, whitelist.address, stakeToken.address, reservoir.address))
                 .to.be.revertedWith(helper.getAddressIs0ErrorMessage('StakingPoolFactory', 'createStakingPool'));
         });
         
         it('Should fail due to zero implementation address', async () => {
-            await expect(stakingPoolFactory.createStakingPool(helper.OWNER.address, helper.ADDRESS_ZERO, whitelist.address, stakeToken.address))
+            await expect(stakingPoolFactory.createStakingPool(helper.OWNER.address, helper.ADDRESS_ZERO, whitelist.address, stakeToken.address, reservoir.address))
                 .to.be.revertedWith(helper.getAddressIs0ErrorMessage('StakingPoolFactory', 'createStakingPool'));
         });
     
         it('Should fail due to zero stake token address', async () => {
-            await expect(stakingPoolFactory.createStakingPool(helper.OWNER.address, implAndTerms.address, whitelist.address, helper.ADDRESS_ZERO))
+            await expect(stakingPoolFactory.createStakingPool(helper.OWNER.address, implAndTerms.address, whitelist.address, helper.ADDRESS_ZERO, reservoir.address))
                 .to.be.revertedWith(helper.getAddressIs0ErrorMessage('StakingPoolFactory', 'createStakingPool'));
         });
     });

@@ -11,8 +11,10 @@ const init = async () => {
         StakingPool,
         ImplAndTerms,
         Whitelist,
+        Reservoir,
         ERC20Init
     ] = await utils.getContractFactories();
+
     const [
         OWNER,
         STAKER,
@@ -20,6 +22,7 @@ const init = async () => {
         INFLUENCER,
         ...otherAccounts
     ] = await ethers.getSigners();
+
     const getStakeToken = async () => StakeToken.deploy(
         constants.DEPLOY_STAKE_TOKEN_AMOUNT,
         constants.STAKE_TOKEN_NAME,
@@ -40,6 +43,7 @@ const init = async () => {
         StakingPool,
         ImplAndTerms,
         Whitelist,
+        Reservoir,
         ERC20Init,
         OWNER,
         STAKER,
