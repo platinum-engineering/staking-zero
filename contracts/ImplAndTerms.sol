@@ -46,7 +46,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         string memory name_,
         string memory symbol_
     ) public {
-        require(whitelist == address(0) && stakeToken == address(0), "ImplAndTerms may only be initialized once");
+        require(whitelist == address(0) && stakeToken == address(0), "ImplAndTerms::initialize: may only be initialized once");
 
         require(
             whitelist_ != address(0)
