@@ -19,6 +19,8 @@ contract PoolsInfo is WhiteList {
     }
 
     function addPool(address factory_, address pool_, address stakeToken_, address implAndTerms_) public {
+        require(getWhiteListStatus(msg.sender), "PoolsInfo::addPool: factory is not in whitelist");
+
         PoolData memory newPool;
         newPool.factory = factory_;
         newPool.pool = pool_;

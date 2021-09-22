@@ -10,13 +10,13 @@ contract WhiteList is Ownable {
 
     event RemovedWhiteList(address _user);
 
-    function addWhiteList (address _user) public onlyOwner {
+    function addWhiteList(address _user) public onlyOwner {
         isWhiteListed[_user] = true;
 
         emit AddedWhiteList(_user);
     }
 
-    function removeWhiteList (address _user) public onlyOwner {
+    function removeWhiteList(address _user) public onlyOwner {
         isWhiteListed[_user] = false;
 
         emit RemovedWhiteList(_user);
