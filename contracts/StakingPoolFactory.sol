@@ -3,15 +3,20 @@ pragma solidity ^0.8.6;
 
 import "./StakingPool.sol";
 import "./utils/ERC20Token.sol";
+import "./PoolsInfo.sol";
 
 contract StakingPoolFactory {
+    address public poolsInfo;
+
     /**
      * Fired on creation new staking contract
      * @param newStakingPool Address of new staking contract
      */
     event StakingPoolCreated(address newStakingPool);
 
-    constructor() {}
+    constructor(address poolsInfo_) {
+        poolsInfo = poolsInfo_;
+    }
 
     /**
      * Creates new staking contract
@@ -34,6 +39,8 @@ contract StakingPoolFactory {
         StakingPool newPool = new StakingPool(implAndTerms_, whitelist_, stakeToken_, reservoir_, name, symbol);
 
         newPool.transferOwnership(owner_);
+
+        PoolsInfo(poolsInfo).addPool(address(this), address(newPool), stakeToken_, implAndTerms_);
 
         emit StakingPoolCreated(address(newPool));
 
