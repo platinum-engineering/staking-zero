@@ -85,15 +85,11 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     }
 
     function stake(uint tokenAmount, uint holdTime, address referer) public {
-        stakeInternal(msg.sender, tokenAmount, holdTime, referer, address(0), false);
+        stakeInternal(msg.sender, tokenAmount, holdTime, referer, address(0), true);
     }
 
     function stake(uint tokenAmount, uint holdTime, address referer, address influencer) public {
-        stakeInternal(msg.sender, tokenAmount, holdTime, referer, influencer, false);
-    }
-
-    function stake(uint tokenAmount, uint holdTime, address referer, address influencer, bool donatForDeveloper) public {
-        stakeInternal(msg.sender, tokenAmount, holdTime, referer, influencer, donatForDeveloper);
+        stakeInternal(msg.sender, tokenAmount, holdTime, referer, influencer, true);
     }
 
     function stakeInternal(address staker, uint tokenAmount, uint holdTime, address referer, address influencer, bool donatsForDevelopers) internal {

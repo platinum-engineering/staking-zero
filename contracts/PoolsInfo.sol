@@ -14,6 +14,8 @@ contract PoolsInfo is WhiteList {
 
     PoolData[] public pools;
 
+    event NewPool(uint id, address indexed factory, address pool, address indexed stakeToken, address indexed implAndTerms);
+
     function getPoolsLength() public view returns (uint) {
         return pools.length;
     }
@@ -26,6 +28,9 @@ contract PoolsInfo is WhiteList {
         newPool.pool = pool_;
         newPool.stakeToken = stakeToken_;
         newPool.implAndTerms = implAndTerms_;
+
+        uint id = getPoolsLength();
+        emit NewPool(id, factory_, pool_, stakeToken_, implAndTerms_);
 
         pools.push(newPool);
     }

@@ -22,7 +22,7 @@ contract WhiteList is Ownable {
         emit RemovedWhiteList(_user);
     }
 
-    function getWhiteListStatus(address _user) external view returns (bool) {
+    function getWhiteListStatus(address _user) public view returns (bool) {
         return isWhiteListed[_user];
     }
 }
