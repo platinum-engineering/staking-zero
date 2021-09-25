@@ -11,19 +11,21 @@ contract StakingPool is Storage, Ownable {
         address implAndTerms_,
         address whitelist_,
         address stakeToken_,
+        address reservoir_,
         string memory name_,
         string memory symbol_
     ) {
         require(
             implAndTerms_ != address(0)
             && whitelist_ != address(0)
-            && stakeToken_ != address(0),
+            && stakeToken_ != address(0)
+            && reservoir_ != address(0),
             "StakingPool::constructor: address is 0"
         );
 
         implementation = implAndTerms_;
 
-        delegateTo(implementation, abi.encodeWithSignature("initialize(address,address,string,string)", whitelist_, stakeToken_, name_, symbol_));
+        delegateTo(implementation, abi.encodeWithSignature("initialize(address,address,address,string,string)", whitelist_, stakeToken_, reservoir_, name_, symbol_));
     }
 
     function delegateTo(address callee, bytes memory data) internal returns (bytes memory) {

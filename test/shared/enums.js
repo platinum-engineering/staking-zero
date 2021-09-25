@@ -16,6 +16,11 @@ const revertMessages = {
     ERC20ApproveTo0: 'ERC20: approve to the zero address',
     refererOrInfluencerEqualsToSender: 'ImplAndTerms::stakeInternal: referer of influencer address equals to staker address',
     senderIsNotStaker: 'ImplAndTerms::unstake: msg.sender is not staker',
+    stakeIsNotExist: 'ImplAndTerms::unstake: stake is not exist',
+    stakeIsNotActive: 'ImplAndTerms::unstake: stake is not active',
+    afterUnstakeStakeIsNotActive: 'ImplAndTerms::getTokenAmountAfterUnstake: stake is not active',
+    mayOnlyBeInitializedOnce: 'ImplAndTerms::initialize: may only be initialized once',
+    influencerIsNotInWhitelist: 'ImplAndTerms::stakeInternal: influencer is not in whitelist',
 };
 
 module.exports = {
