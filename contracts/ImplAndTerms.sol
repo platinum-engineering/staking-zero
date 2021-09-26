@@ -118,7 +118,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
 
             require(isInfluencer, "ImplAndTerms::stakeInternal: influencer is not in whitelist");
 
-            stakeFresh(influencer, 0, calcInfluencerLpAmount(amountIn));
+            stakeFresh(influencer, 0, calcInfluencerLPAmount(amountIn));
         }
 
         if (donatsForDevelopers) {
@@ -134,28 +134,29 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         emit Stake(staker, userStakes[staker].length, lpAmountOut, holdTime);
     }
 
-    function calcAllLPAmountOut(uint amountIn, uint holdTime) public view returns (uint, uint, uint, uint) {
+    function calcAllLPAmountOut(uint amountIn, uint holdTime) public view returns (uint, uint, uint, uint, uint) {
         uint stakerLpAmountOut = calcStakerLPAmount(amountIn, holdTime);
         uint refererLpAmountOut = calcRefererLPAmount(amountIn);
-        uint influencerLpAmountOut = calcInfluencerLpAmount(amountIn);
+        uint influencerLpAmountOut = calcInfluencerLPAmount(amountIn);
         uint developerLpAmountOut = calcDeveloperLPAmount(amountIn);
+        uint totalAmount = stakerLpAmountOut + refererLpAmountOut + influencerLpAmountOut + developerLpAmountOut;
 
-        return (stakerLpAmountOut, refererLpAmountOut, influencerLpAmountOut, developerLpAmountOut);
+        return (totalAmount, stakerLpAmountOut, refererLpAmountOut, influencerLpAmountOut, developerLpAmountOut);
     }
 
     function calcStakerLPAmount(uint amountIn, uint holdTime) public view returns (uint) {
         return amountIn + calcBonusTime(amountIn, holdTime);
     }
 
-    function calcBonusTime(uint amount, uint holdTime) public view returns (uint) {
-        return amount * holdTime * timeBonusPercent / 100e18 / timeNormalizer;
+    function calcBonusTime(uint amountIn, uint holdTime) public view returns (uint) {
+        return amountIn * holdTime * timeBonusPercent / 100e18 / timeNormalizer;
     }
 
     function calcRefererLPAmount(uint amountIn) public view returns (uint) {
         return amountIn * refererBonusPercent / 100e18;
     }
 
-    function calcInfluencerLpAmount(uint amountIn) public view returns (uint) {
+    function calcInfluencerLPAmount(uint amountIn) public view returns (uint) {
         return amountIn * influencerBonusPercent / 100e18;
     }
 
