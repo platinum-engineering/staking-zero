@@ -108,6 +108,8 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         stakeFresh(staker, holdTime, stakerLpAmount);
 
         if (referer != address(0)) {
+            require(holdTime > timeNormalizer, "ImplAndTerms::stakeInternal: holdtime with referer must be more than time normalizer");
+
             stakeFresh(referer, 0, calcRefererLPAmount(amountIn));
         }
 
