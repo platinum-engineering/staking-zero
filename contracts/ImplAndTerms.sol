@@ -29,7 +29,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         uint lpAmount;
         uint stakeTime;
         uint holdTime;
-        bool status; // true is active
+        bool active; // true is active
     }
 
     mapping(address => StakeData[]) public userStakes;
@@ -129,7 +129,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     function stakeFresh(address staker, uint holdTime, uint lpAmountOut) internal {
         _mint(staker, lpAmountOut);
 
-        userStakes[staker].push(StakeData({lpAmount: lpAmountOut, stakeTime: block.timestamp, holdTime: holdTime, status: true}));
+        userStakes[staker].push(StakeData({lpAmount: lpAmountOut, stakeTime: block.timestamp, holdTime: holdTime, active: true}));
 
         emit Stake(staker, userStakes[staker].length, lpAmountOut, holdTime);
     }
@@ -180,21 +180,21 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         uint lpAmountOut;
         uint stakeTime;
         uint holdTime;
-        bool status;
+        bool active;
 
         for (uint i = 0; i < userStakeIds.length; i++) {
             require(userStakeIds[i] < userStakes[msg.sender].length, "ImplAndTerms::unstake: stake is not exist");
 
-            (lpAmountOut, stakeTime, holdTime, status) = getUserStake(msg.sender, userStakeIds[i]);
+            (lpAmountOut, stakeTime, holdTime, active) = getUserStake(msg.sender, userStakeIds[i]);
 
-            require(status, "ImplAndTerms::unstake: stake is not active");
+            require(active, "ImplAndTerms::unstake: stake is not active");
 
             allLpAmountOut += lpAmountOut;
 
             uint amountOut = calcAmountOut(lpAmountOut, block.timestamp, stakeTime, holdTime);
             stakeTokenAmountOut += amountOut;
 
-            userStakes[msg.sender][userStakeIds[i]].status = false;
+            userStakes[msg.sender][userStakeIds[i]].active = false;
 
             emit Unstake(msg.sender, userStakeIds[i], amountOut);
         }
@@ -251,7 +251,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     }
 
     function getUserStake(address user, uint id) public view returns (uint, uint, uint, bool) {
-        return (userStakes[user][id].lpAmount, userStakes[user][id].stakeTime, userStakes[user][id].holdTime, userStakes[user][id].status);
+        return (userStakes[user][id].lpAmount, userStakes[user][id].stakeTime, userStakes[user][id].holdTime, userStakes[user][id].active);
     }
 
     function getAllUserStakes(address user) public view returns (StakeData[] memory) {
@@ -262,7 +262,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         StakeData[] memory allUserActiveStakesTmp = new StakeData[](userStakes[user].length);
         uint j = 0;
         for (uint i = 0; i < userStakes[user].length; i++) {
-            if (userStakes[user][i].status) {
+            if (userStakes[user][i].active) {
                 allUserActiveStakesTmp[j] = userStakes[user][i];
                 j++;
             }
@@ -279,7 +279,9 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     function getTokenAmountAfterUnstake(uint stakeUserId) public view returns (uint) {
         StakeData memory stakeData = userStakes[msg.sender][stakeUserId];
 
-        require(stakeData.status, "ImplAndTerms::getTokenAmountAfterUnstake: stake is not active");
+        if (stakeData.active == false) {
+            return 0;
+        }
 
         return calcAmountOut(stakeData.lpAmount, block.timestamp, stakeData.stakeTime, stakeData.holdTime);
     }
@@ -289,12 +291,12 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         uint lpAmountOut;
         uint stakeTime;
         uint holdTime;
-        bool status;
+        bool active;
 
         for (uint i = 0; i < userStakes[user].length; i++) {
-            (lpAmountOut, stakeTime, holdTime, status) = getUserStake(msg.sender, i);
+            (lpAmountOut, stakeTime, holdTime, active) = getUserStake(msg.sender, i);
 
-            if (status) {
+            if (active) {
                 uint amountOut = calcAmountOut(lpAmountOut, block.timestamp, stakeTime, holdTime);
                 stakeTokenAmountOut += amountOut;
             }
