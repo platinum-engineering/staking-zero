@@ -103,9 +103,9 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
         uint amountIn = doTransferIn(staker, stakeToken, tokenAmount);
         totalStaked += amountIn;
 
-        uint stakerLpAmount = calcStakerLPAmount(amountIn, holdTime);
+        uint stakerLPAmount = calcStakerLPAmount(amountIn, holdTime);
 
-        stakeFresh(staker, holdTime, stakerLpAmount);
+        stakeFresh(staker, holdTime, stakerLPAmount);
 
         if (referer != address(0)) {
             require(holdTime > timeNormalizer, "ImplAndTerms::stakeInternal: holdtime with referer must be more than time normalizer");
