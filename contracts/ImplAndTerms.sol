@@ -206,7 +206,7 @@ contract ImplAndTerms is Storage, Ownable, ERC20Init {
     }
 
     function calcAmountOut(uint lpAmountIn, uint timestamp, uint stakeTime, uint holdTime) public view returns (uint) {
-        uint tokenAmountOut = ERC20(stakeToken).balanceOf(address(this)) * lpAmountIn / totalSupply();
+        uint tokenAmountOut = ERC20(stakeToken).balanceOf(address(this)) * lpAmountIn / totalSupply;
 
         uint feeAmount;
         uint delta = (timestamp - stakeTime);

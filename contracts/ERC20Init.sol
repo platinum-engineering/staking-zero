@@ -3,15 +3,17 @@ pragma solidity ^0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract ERC20Init is Context, IERC20 {
-    mapping(address => uint256) private _balances;
+contract ERC20Init is Context {
+    mapping(address => uint256) public balances;
+    mapping(address => mapping(address => uint256)) public allowances;
 
-    mapping(address => mapping(address => uint256)) private _allowances;
-
-    uint256 private _totalSupply;
+    uint public totalSupply;
 
     string public name;
     string public symbol;
+
+    event Transfer(address indexed from, address indexed to, uint value);
+    event Approval(address indexed owner, address indexed spender, uint value);
 
     /**
      * @dev Sets the values for {name} and {symbol}.
@@ -45,17 +47,10 @@ contract ERC20Init is Context, IERC20 {
     }
 
     /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view virtual override returns (uint256) {
-        return _totalSupply;
-    }
-
-    /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public view virtual override returns (uint256) {
-        return _balances[account];
+    function balanceOf(address account) public view virtual returns (uint256) {
+        return balances[account];
     }
 
     /**
@@ -66,7 +61,7 @@ contract ERC20Init is Context, IERC20 {
      * - `recipient` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+    function transfer(address recipient, uint256 amount) public virtual returns (bool) {
         _transfer(_msgSender(), recipient, amount);
 
         return true;
@@ -75,8 +70,8 @@ contract ERC20Init is Context, IERC20 {
     /**
      * @dev See {IERC20-allowance}.
      */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
+    function allowance(address owner, address spender) public view virtual returns (uint256) {
+        return allowances[owner][spender];
     }
 
     /**
@@ -86,7 +81,7 @@ contract ERC20Init is Context, IERC20 {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+    function approve(address spender, uint256 amount) public virtual returns (bool) {
         _approve(_msgSender(), spender, amount);
 
         return true;
@@ -109,10 +104,10 @@ contract ERC20Init is Context, IERC20 {
         address sender,
         address recipient,
         uint256 amount
-    ) public virtual override returns (bool) {
+    ) public returns (bool) {
         _transfer(sender, recipient, amount);
 
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
+        uint256 currentAllowance = allowances[sender][_msgSender()];
         require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
 
         _approve(sender, _msgSender(), currentAllowance - amount);
@@ -133,7 +128,7 @@ contract ERC20Init is Context, IERC20 {
      * - `spender` cannot be the zero address.
      */
     function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
+        _approve(_msgSender(), spender, allowances[_msgSender()][spender] + addedValue);
 
         return true;
     }
@@ -153,7 +148,7 @@ contract ERC20Init is Context, IERC20 {
      * `subtractedValue`.
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
+        uint256 currentAllowance = allowances[_msgSender()][spender];
         require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
 
         _approve(_msgSender(), spender, currentAllowance - subtractedValue);
@@ -183,11 +178,11 @@ contract ERC20Init is Context, IERC20 {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
 
-        uint256 senderBalance = _balances[sender];
+        uint256 senderBalance = balances[sender];
         require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
 
-        _balances[sender] = senderBalance - amount;
-        _balances[recipient] += amount;
+        balances[sender] = senderBalance - amount;
+        balances[recipient] += amount;
 
         emit Transfer(sender, recipient, amount);
     }
@@ -204,8 +199,8 @@ contract ERC20Init is Context, IERC20 {
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "ERC20: mint to the zero address");
 
-        _totalSupply += amount;
-        _balances[account] += amount;
+        totalSupply += amount;
+        balances[account] += amount;
 
         emit Transfer(address(0), account, amount);
     }
@@ -224,11 +219,11 @@ contract ERC20Init is Context, IERC20 {
     function _burn(address account, uint256 amount) internal virtual {
         require(account != address(0), "ERC20: burn from the zero address");
 
-        uint256 accountBalance = _balances[account];
+        uint256 accountBalance = balances[account];
         require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
 
-        _balances[account] = accountBalance - amount;
-        _totalSupply -= amount;
+        balances[account] = accountBalance - amount;
+        totalSupply -= amount;
 
         emit Transfer(account, address(0), amount);
     }
@@ -254,7 +249,8 @@ contract ERC20Init is Context, IERC20 {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
-        _allowances[owner][spender] = amount;
+        allowances[owner][spender] = amount;
+
         emit Approval(owner, spender, amount);
     }
 }
