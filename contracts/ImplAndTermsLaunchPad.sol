@@ -46,9 +46,9 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
 
         stakeToken = stakeToken_;
 
-        minStakeAmount = 5_000 * ERC20(stakeToken_).decimals();
-        maxStakeAmount = 10_000 * ERC20(stakeToken_).decimals();
-        maxTotalStakeAmount = 100_000_000 * ERC20(stakeToken_).decimals();
+        minStakeAmount = 5_000 * (10 ** ERC20Init(stakeToken_).decimals());
+        maxStakeAmount = 10_000 * (10 ** ERC20Init(stakeToken_).decimals());
+        maxTotalStakeAmount = 100_000_000 * (10 ** ERC20Init(stakeToken_).decimals());
 
         unStakeTime = 7 days;
 
