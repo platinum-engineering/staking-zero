@@ -69,6 +69,7 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
 
         require(minStakeAmount <= amountIn + stakeAmount, 'ImplAndTerms::stake: stake amount must be more than min stake amount');
         require(amountIn + stakeAmount <= maxStakeAmount, 'ImplAndTerms::stake: stake amount must be less than max stake amount');
+        require(amountIn + _totalSupply <= maxTotalStakeAmount, 'ImplAndTerms::stake: total stake amount must be less than max total stake amount');
 
         _mint(staker, amountIn);
 
