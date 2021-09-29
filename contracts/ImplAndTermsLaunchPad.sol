@@ -65,16 +65,16 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
         address staker = msg.sender;
 
         uint amountIn = doTransferIn(staker, stakeToken, tokenAmount);
+        uint stakeAmount = userStakes[staker].amount;
 
-        if (amountIn == 0) {
-            return;
-        }
+        require(minStakeAmount <= amountIn + stakeAmount, 'ImplAndTerms::stake: stake amount must be more than min stake amount');
+        require(amountIn + stakeAmount <= maxStakeAmount, 'ImplAndTerms::stake: stake amount must be less than max stake amount');
 
         _mint(staker, amountIn);
 
         uint stakerId = users.length;
         uint stakeTime = getBlockTimestamp();
-        userStakes[staker].amount = amountIn;
+        userStakes[staker].amount += amountIn;
         userStakes[staker].stakeTime = stakeTime;
         users.push(staker);
 
