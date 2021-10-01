@@ -14,6 +14,8 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
     uint public maxTotalStakeAmount;
     uint public unStakeTime;
 
+    bool public pauseStake;
+
     address[] public users;
 
     struct StakeData {
@@ -55,6 +57,19 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
         super.initialize(name_, symbol_);
     }
 
+    function setStakeAmounts(uint minStakeAmount_, uint maxStakeAmount_) public onlyOwner {
+        minStakeAmount = minStakeAmount_;
+        maxStakeAmount = maxStakeAmount_;
+    }
+
+    function setMaxTotalStakeAmount(uint maxTotalStakeAmount_) public onlyOwner {
+        maxTotalStakeAmount = maxTotalStakeAmount_;
+    }
+
+    function setPauseStake(bool pauseStake_) public onlyOwner {
+        pauseStake = pauseStake_;
+    }
+
     function setUnStakeTime(uint _newUnStakeTime) public onlyOwner {
         unStakeTime = _newUnStakeTime;
     }
@@ -62,6 +77,8 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
     // transfer stake tokens from user to pool
     // mint lp tokens from pool to user
     function stake(uint tokenAmount) public {
+        require(!pauseStake, 'ImplAndTerms::stake: stake is paused');
+
         address staker = msg.sender;
 
         uint amountIn = doTransferIn(staker, stakeToken, tokenAmount);
@@ -89,7 +106,7 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
         uint amount = userStakes[staker].amount;
         uint stakeTime = userStakes[staker].stakeTime;
 
-        require(getBlockTimestamp() - stakeTime < unStakeTime, "ImplAndTerms::unstake: bad timing for request");
+        require(getBlockTimestamp() - stakeTime > unStakeTime, "ImplAndTerms::unstake: bad timing for request");
 
         _burn(msg.sender, amount);
         userStakes[staker].amount = 0;
