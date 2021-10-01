@@ -62,6 +62,10 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
         maxStakeAmount = maxStakeAmount_;
     }
 
+    function setMaxTotalStakeAmount(uint maxTotalStakeAmount_) public onlyOwner {
+        maxTotalStakeAmount = maxTotalStakeAmount_;
+    }
+
     function setPauseStake(bool pauseStake_) public onlyOwner {
         pauseStake = pauseStake_;
     }
