@@ -1,0 +1,6 @@
+dotenv: .env
+compiler:
+    solc:
+        remappings:
+          - "@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.3.0"
+          - "@chainlink=smartcontractkit/chainlink@0.10.14"
