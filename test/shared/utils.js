@@ -7,6 +7,7 @@ const getContractFactories = async () =>
         ethers.getContractFactory('StakingPoolFactory'),
         ethers.getContractFactory('StakingPool'),
         ethers.getContractFactory('ImplAndTerms'),
+        ethers.getContractFactory('ImplAndTermsLaunchPad'),
         ethers.getContractFactory('WhiteList'),
         ethers.getContractFactory('Reservoir'),
         ethers.getContractFactory('ERC20Init'),

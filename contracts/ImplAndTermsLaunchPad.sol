@@ -29,17 +29,17 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
     event Unstake(address indexed staker, uint amountOut);
 
     function initialize(
-        address whitelist_,
+        address notUsed1_, // for interface only
         address stakeToken_,
-        address reservoir_,
+        address notUsed2_, // for interface only
         string memory name_,
         string memory symbol_
     ) public {
         require(stakeToken == address(0), "ImplAndTerms::initialize: may only be initialized once");
 
         // silence warnings
-        whitelist_;
-        reservoir_;
+        notUsed1_;
+        notUsed2_;
 
         require(
             stakeToken_ != address(0),
@@ -58,6 +58,8 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
     }
 
     function setStakeAmounts(uint minStakeAmount_, uint maxStakeAmount_) public onlyOwner {
+        require(minStakeAmount_ <= maxStakeAmount_, ' "ImplAndTerms::setStakeAmounts: max amount must be more than min amount');
+
         minStakeAmount = minStakeAmount_;
         maxStakeAmount = maxStakeAmount_;
     }

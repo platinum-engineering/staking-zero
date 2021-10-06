@@ -4,12 +4,14 @@ const utils = require('./utils');
 const enums = require('./enums');
 const { expect } = require('chai');
 const BN = ethers.BigNumber.from;
+
 const init = async () => {
     const [
         StakeToken,
         StakingPoolFactory,
         StakingPool,
         ImplAndTerms,
+        ImplAndTermsLaunchPad,
         Whitelist,
         Reservoir,
         ERC20Init
@@ -42,6 +44,7 @@ const init = async () => {
         StakingPoolFactory,
         StakingPool,
         ImplAndTerms,
+        ImplAndTermsLaunchPad,
         Whitelist,
         Reservoir,
         ERC20Init,
