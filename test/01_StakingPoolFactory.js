@@ -9,6 +9,7 @@ describe('Staking pool factory', async () => {
     let implAndTerms;
     let whitelist;
     let helper;
+    let poolsInfo;
 
     before(async () => {
         helper = await init();
@@ -16,7 +17,19 @@ describe('Staking pool factory', async () => {
 
     beforeEach(async () => {
         stakeToken = await helper.getStakeToken();
-        [stakingPoolFactory, implAndTerms, whitelist, reservoir] = await helper.deployManyContracts(['StakingPoolFactory', 'ImplAndTerms', 'Whitelist', 'Reservoir']);
+        poolsInfo = await helper.deployOneContract('PoolsInfo');
+        [
+            stakingPoolFactory,
+            implAndTerms,
+            whitelist,
+            reservoir
+        ] = await helper.deployManyContracts([
+            ['StakingPoolFactory', poolsInfo.address],
+            'ImplAndTerms',
+            'Whitelist',
+            'Reservoir'
+        ]);
+        await poolsInfo.addWhiteList(stakingPoolFactory.address);
     });
 
     describe('Transactions', async () => {

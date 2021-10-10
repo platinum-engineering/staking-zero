@@ -11,6 +11,7 @@ const getContractFactories = async () =>
         ethers.getContractFactory('WhiteList'),
         ethers.getContractFactory('Reservoir'),
         ethers.getContractFactory('ERC20Init'),
+        ethers.getContractFactory('PoolsInfo'),
     ]);
 
 const getAddressIs0ErrorMessage = (contractName, functionName) =>

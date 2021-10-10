@@ -7,14 +7,15 @@ const BN = ethers.BigNumber.from;
 
 const init = async () => {
     const [
-        StakeToken,
+        ERC20Token,
         StakingPoolFactory,
         StakingPool,
         ImplAndTerms,
         ImplAndTermsLaunchPad,
         Whitelist,
         Reservoir,
-        ERC20Init
+        ERC20Init,
+        PoolsInfo,
     ] = await utils.getContractFactories();
 
     const [
@@ -25,7 +26,7 @@ const init = async () => {
         ...otherAccounts
     ] = await ethers.getSigners();
 
-    const getStakeToken = async () => StakeToken.deploy(
+    const getStakeToken = async () => ERC20Token.deploy(
         constants.DEPLOY_STAKE_TOKEN_AMOUNT,
         constants.STAKE_TOKEN_NAME,
         constants.STAKE_TOKEN_SYMBOL
@@ -40,13 +41,14 @@ const init = async () => {
     const data = {
         ...constants,
         ...enums,
-        StakeToken,
+        ERC20Token,
         StakingPoolFactory,
         StakingPool,
         ImplAndTerms,
         ImplAndTermsLaunchPad,
         Whitelist,
         Reservoir,
+        PoolsInfo,
         ERC20Init,
         OWNER,
         STAKER,
@@ -58,8 +60,15 @@ const init = async () => {
         INFLUENCER_BONUS_LP_AMOUNT: constants.STAKE_TOKEN_AMOUNT * constants.INFLUENCER_BONUS_PERCENT / 100,
     };
     
-    const deployOneContract = async (name) => data[name].deploy();
-    const deployManyContracts = async (names) => Promise.all(names.map(name => data[name].deploy()));
+    const deployOneContract = async (contract, ...params) => data[contract].deploy(...params);
+    const deployManyContracts = async (contracts) => Promise.all(contracts.map(contract => {
+        if (typeof contract === 'string') {
+            return data[contract].deploy()
+        } else {
+            const [name, ...params] = contract;
+            return data[name].deploy(...params);
+        }
+    }));
     
     const STAKER_AMOUNT_WITH_TIME_BONUS = calcStakerAmountWithTimeBonus(constants.STAKE_TOKEN_AMOUNT, constants.HOLD_TIME);
     const REFERER_AMOUNT_WITH_TIME_BONUS = calcAmountWithTimeBonus(data.REFERER_BONUS_LP_AMOUNT, constants.HOLD_TIME);
