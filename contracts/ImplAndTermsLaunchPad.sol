@@ -6,13 +6,14 @@ import "./ERC20Init.sol";
 import "./Storage.sol";
 import "./Whitelist.sol";
 
-contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
+contract ImplAndTermsLaunchPad is Storage, Ownable {
     address public stakeToken;
 
     uint public minStakeAmount;
     uint public maxStakeAmount;
     uint public maxTotalStakeAmount;
     uint public unStakeTime;
+    uint public totalStakeAmount;
 
     bool public pauseStake;
 
@@ -29,17 +30,19 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
     event Unstake(address indexed staker, uint amountOut);
 
     function initialize(
-        address whitelist_,
+        address notUsed1_, // for interface only
         address stakeToken_,
-        address reservoir_,
-        string memory name_,
-        string memory symbol_
+        address notUsed2_, // for interface only
+        string memory notUsed3_, // for interface only
+        string memory notUsed4_ // for interface only
     ) public {
         require(stakeToken == address(0), "ImplAndTerms::initialize: may only be initialized once");
 
         // silence warnings
-        whitelist_;
-        reservoir_;
+        notUsed1_;
+        notUsed2_;
+        notUsed3_;
+        notUsed4_;
 
         require(
             stakeToken_ != address(0),
@@ -53,11 +56,11 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
         maxTotalStakeAmount = 100_000_000 * (10 ** ERC20Init(stakeToken_).decimals());
 
         unStakeTime = 7 days;
-
-        super.initialize(name_, symbol_);
     }
 
     function setStakeAmounts(uint minStakeAmount_, uint maxStakeAmount_) public onlyOwner {
+        require(minStakeAmount_ <= maxStakeAmount_, "ImplAndTerms::setStakeAmounts: max amount must be more than min amount");
+
         minStakeAmount = minStakeAmount_;
         maxStakeAmount = maxStakeAmount_;
     }
@@ -75,7 +78,6 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
     }
 
     // transfer stake tokens from user to pool
-    // mint lp tokens from pool to user
     function stake(uint tokenAmount) public {
         require(!pauseStake, 'ImplAndTerms::stake: stake is paused');
 
@@ -84,14 +86,15 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
         uint amountIn = doTransferIn(staker, stakeToken, tokenAmount);
         uint stakeAmount = userStakes[staker].amount;
 
+        require(amountIn + totalStakeAmount <= maxTotalStakeAmount, 'ImplAndTerms::stake: total stake amount must be less than max total stake amount');
         require(minStakeAmount <= amountIn + stakeAmount, 'ImplAndTerms::stake: stake amount must be more than min stake amount');
         require(amountIn + stakeAmount <= maxStakeAmount, 'ImplAndTerms::stake: stake amount must be less than max stake amount');
-        require(amountIn + totalSupply <= maxTotalStakeAmount, 'ImplAndTerms::stake: total stake amount must be less than max total stake amount');
 
-        _mint(staker, amountIn);
+        totalStakeAmount += amountIn;
 
         uint stakerId = users.length;
         uint stakeTime = getBlockTimestamp();
+
         userStakes[staker].amount += amountIn;
         userStakes[staker].stakeTime = stakeTime;
         users.push(staker);
@@ -99,18 +102,16 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
         emit Stake(staker, stakerId, amountIn, stakeTime);
     }
 
-    // burn lp tokens from user
     // transfer stake tokens from pool to user
-    function unstake() public {
+    function unstake(uint amount) public {
         address staker = msg.sender;
-        uint amount = userStakes[staker].amount;
+        uint stakeAmount = userStakes[staker].amount;
         uint stakeTime = userStakes[staker].stakeTime;
 
+        require(stakeAmount >= amount, "ImplAndTerms::unstake: amount more than stake amount");
         require(getBlockTimestamp() - stakeTime > unStakeTime, "ImplAndTerms::unstake: bad timing for request");
 
-        _burn(msg.sender, amount);
-        userStakes[staker].amount = 0;
-        userStakes[staker].stakeTime = 0;
+        userStakes[staker].amount = stakeAmount - amount;
 
         doTransferOut(stakeToken, msg.sender, amount);
 
@@ -135,7 +136,7 @@ contract ImplAndTermsLaunchPad is Storage, Ownable, ERC20Init {
      * @dev Function to simply retrieve block number
      *  This exists mainly for inheriting test contracts to stub this result.
      */
-    function getBlockTimestamp() internal virtual view returns (uint) {
+    function getBlockTimestamp() public virtual view returns (uint) {
         return block.timestamp;
     }
 

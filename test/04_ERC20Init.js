@@ -18,26 +18,6 @@ describe('ERC20Init', async () => {
     });
 
     describe('Transactions', async () => {
-        it('Should set name and symbol on initialize', async () => {
-            let [name, symbol] = await Promise.all([
-                ERC20InitContract.name(),
-                ERC20InitContract.symbol(),
-            ]);
-            
-            expect(name).to.be.equal('');
-            expect(symbol).to.be.equal('');
-            
-            await ERC20InitContract.initialize('Test name', 'Test symbol');
-    
-            [name, symbol] = await Promise.all([
-                ERC20InitContract.name(),
-                ERC20InitContract.symbol(),
-            ]);
-    
-            expect(name).to.be.equal('Test name');
-            expect(symbol).to.be.equal('Test symbol');
-        });
-        
         it('Should return decimals', async () => {
             const decimals = await ERC20InitContract.decimals();
     

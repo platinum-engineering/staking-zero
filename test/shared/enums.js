@@ -21,6 +21,15 @@ const revertMessages = {
     afterUnstakeStakeIsNotActive: 'ImplAndTerms::getTokenAmountAfterUnstake: stake is not active',
     mayOnlyBeInitializedOnce: 'ImplAndTerms::initialize: may only be initialized once',
     influencerIsNotInWhitelist: 'ImplAndTerms::stakeInternal: influencer is not in whitelist',
+
+    // launch pad revert messages
+    stakeAmountMustBeMoreThanMinStakeAmount: 'ImplAndTerms::stake: stake amount must be more than min stake amount',
+    stakeAmountMustBeLessThanMaxStakeAmount: 'ImplAndTerms::stake: stake amount must be less than max stake amount',
+    totalStakeAmountMustBeLessThanMaxTotalStakeAmount: 'ImplAndTerms::stake: total stake amount must be less than max total stake amount',
+    stakeIsPaused: 'ImplAndTerms::stake: stake is paused',
+    setStakeAmountsMaxAmountMustBeMoreThanMinAmount: 'ImplAndTerms::setStakeAmounts: max amount must be more than min amount',
+    amountMoreThanStakeAmount: 'ImplAndTerms::unstake: amount more than stake amount',
+    badTimeForRequest: 'ImplAndTerms::unstake: bad timing for request',
 };
 
 module.exports = {
