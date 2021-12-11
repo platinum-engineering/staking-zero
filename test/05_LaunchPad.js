@@ -298,7 +298,8 @@ describe('LaunchPad pool', async () => {
                     .to.be.revertedWith(helper.revertMessages.stakeIsPaused);
 
                 await implemented.connect(helper.OWNER).setPauseStake(false);
-
+                expect(await implemented.pauseStake()).to.be.equal(false)
+                
                 await stakeToken.connect(helper.OWNER).mint(amount);
                 await stakeToken.connect(helper.OWNER).approve(implemented.address, amount);
 
